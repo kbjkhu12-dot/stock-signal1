@@ -1,0 +1,44 @@
+name: Daily Stock Signal
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "20 17 * * 1-5"
+      timezone: "Asia/Seoul"
+
+permissions:
+  contents: write
+
+jobs:
+  screen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Run screener
+        env:
+          TOP_N: "250"
+          MIN_AVG_AMOUNT: "1000000000"
+          FUND_BATCH: "30"
+          MIN_SIGNALS: "2"
+        run: python stock_signal_cloud.py
+
+      - name: Save report and state
+        run: |
+          git config user.name "stock-signal-bot"
+          git config user.email "stock-signal-bot@users.noreply.github.com"
+          git add reports data
+          git diff --cached --quiet || git commit -m "daily stock signal"
+          git push
